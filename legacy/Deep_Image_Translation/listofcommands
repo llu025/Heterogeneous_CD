@@ -1,0 +1,79 @@
+RUNS=100
+
+rm -rf /logs/*
+
+#rm -rf /models/*
+
+mkdir -p /logs/images/fcn
+
+### ACE ###
+
+DONE=$(< Results/ACE_Texas.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "ACE TEXAS, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 ACE-Net.py --dataset=0 | tee -a Results/ACE_Texas.txt
+((DONE++))
+done
+
+DONE=$(< Results/ACE_California.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "ACE CALIFORNIA, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 ACE-Net.py --dataset=1 | tee -a Results/ACE_California.txt
+((DONE++))
+done
+
+### X-NET ###
+
+DONE=$(< Results/CROSS_Texas.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "CROSS TEXAS, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 X-Net.py --dataset=0 | tee -a Results/CROSS_Texas.txt
+((DONE++))
+done
+
+DONE=$(< Results/CROSS_California.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "X-Net CALIFORNIA, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 X-Net.py --dataset=1 | tee -a Results/CROSS_California.txt
+((DONE++))
+done
+
+### CAN ###
+
+DONE=$(< Results/CAN_Texas.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "CAN TEXAS, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 CAN.py --dataset=0 | tee -a Results/CAN_Texas.txt
+((DONE++))
+done
+
+DONE=$(< Results/CAN_California.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "CAN CALIFORNIA, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 CAN.py --dataset=1 | tee -a Results/CAN_California.txt
+((DONE++))
+done
+
+### SCCN ###
+
+DONE=$(< Results/SCCN_Texas.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "SCCN TEXAS, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 SCCN.py --dataset=0 | tee -a Results/SCCN_Texas.txt
+((DONE++))
+done
+
+DONE=$(< Results/SCCN_California.txt wc -l )
+for i in $(eval echo "{$((DONE+1))..$RUNS}")
+do
+echo "SCCN CALIFORNIA, $i / $RUNS, $((RUNS-DONE-1)) REMAINING"
+python3.6 SCCN.py --dataset=1 | tee -a Results/SCCN_California.txt
+((DONE++))
+done
