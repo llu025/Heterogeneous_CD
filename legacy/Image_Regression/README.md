@@ -5,12 +5,14 @@ Please refer to the paper for details. You are more than welcome to use the code
 
 # How to use
 
-The file **Affinity_matrices.m** takes in input two images and evaluate the change prior to select a training set of unchanged pixels to be used to perform image regression. The ground truth is only needed to check the quality of the output.
-
+**Affinity_matrices.m** takes in input two images and evaluate the change prior to select a training set of unchanged pixels to be used to perform image regression. The ground truth is only needed to check the quality of the output.
 Once the training set is selected, one of the 4 regression methods can be used.
-The multi-output support vector regression code is provided by Gustau Camps-valls at https://www.uv.es/gcamps/code/msvr-2-1.zip and it was developed for this paper: https://doi.org/10.1109/LGRS.2011.2109934
 
-We recommend the use of the MATLAB package ParforProgress2 available at https://github.com/kotowicz/matlab-ParforProgress2
+The *multi-output support vector regression* code is provided by Gustau Camps-valls at https://www.uv.es/gcamps/code/msvr-2-1.zip and it was developed for this paper: https://doi.org/10.1109/LGRS.2011.2109934
+
+**HPT.m** implementes the *Homogeneous Pixel Transformation* method proposed in https://doi.org/10.1109/TIP.2017.2784560
+
+We recommend the use of the MATLAB package **ParforProgress2** available at https://github.com/kotowicz/matlab-ParforProgress2
 
 
 # Available data
