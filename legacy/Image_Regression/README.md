@@ -20,4 +20,4 @@ We recommend the use of the MATLAB package **ParforProgress2** available at http
 Two datasets were used for this project.
 The Texas dataset can be found at Michele Volpi's webpage (https://sites.google.com/site/michelevolpiresearch/codes/cross-sensor) and it is entangled with this paper https://doi.org/10.1016/j.isprsjprs.2015.02.005. Please cite!
 
-The California dataset was created especially for this project, and can be found at https://sites.google.com/view/luppino/data.
+The California dataset was created for this project, and can be found at https://sites.google.com/view/luppino/data.
