@@ -11,7 +11,7 @@ if s1 == 3500
 elseif s1 == 1534
     filename = strcat(filename,'\Tx\Frob_norms.mat');
 else
-    filename = strcat(filename,'\Unknown_dataset\Frob_norms.mat'); 
+    filename = strcat(filename,'\Unknown_dataset\Frob_norms.mat');
 end
 
 [filepath,~,~] = fileparts(filename);
@@ -23,7 +23,7 @@ if nargin < 6
     if nargin < 5
         kth = 7;
         if nargin < 4
-            k = 5;
+            k = 20;
         end
     end
 end
@@ -88,7 +88,7 @@ else
             A2 = exp(-A2/kw2);
             Frobs(i,:) = [100*sum(sum(ROI(a:b,c:d)))/patch_size,norm(A1-A2,'fro'),a,c];
             time = toc;
-            Elapsed_and_remaining_time(i,n_reduced,time,display_time);        
+            Elapsed_and_remaining_time(i,n_reduced,time,display_time);
         end
     end
     [~,I] = sort(Frobs(:,2));
@@ -163,5 +163,7 @@ BH2 = sqrt(s3b - BH2)/sqrt(s3b);
 sprintf('Hellinger distance t2: %f .\n',BH2);
 results.BH2 = BH2;
 
+mask = results.idx_tr;
+save("Data_and_training_sample.mat", "t1", "t2", "mask")
 disp('Training set selection done')
 end
