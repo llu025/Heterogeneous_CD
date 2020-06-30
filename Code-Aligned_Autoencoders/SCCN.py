@@ -92,8 +92,8 @@ class SCCN(ChangeDetector):
             x_code, y_code = self._enc_x(x, training), self._enc_y(y, training)
             if pretraining:
                 x_tilde, y_tilde = (
-                    self.dec_x(x_code, training),
-                    self.dec_y(y_code, training),
+                    self._dec_x(x_code, training),
+                    self._dec_y(y_code, training),
                 )
 
                 retval = [x_tilde, y_tilde]
