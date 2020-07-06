@@ -1,0 +1,7 @@
+*.txt
+*.npz
+*.npy
+**/__pycache__
+**/msvr-2-1/**
+**/ParforProgress2/**
+Dumpster.*

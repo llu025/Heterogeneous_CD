@@ -1,3 +1,6 @@
+import warnings
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 from tensorflow.python.util import deprecation
 
 deprecation._PRINT_DEPRECATION_WARNINGS = False
@@ -34,7 +37,6 @@ parser.add_argument("--cycle", default=2.0, type=float)
 parser.add_argument("--discr", default=1.0, type=float)
 parser.add_argument("--tran", default=3.0, type=float)
 parser.add_argument("--abl_alpha", default=False, type=bool)
-parser.add_argument("--unweigh", default=False, type=bool)
 args = parser.parse_args()
 
 DATASET = args.dataset
@@ -537,10 +539,7 @@ class ACE(object):
                 scipy.io.savemat(prior_path, {prior_name: self.Alpha})
 
             if args.abl_alpha:
-                if args.unweigh:
-                    self.Alpha = np.ones(self.Alpha.shape)
-                else:
-                    self.Alpha = np.random.rand(*self.Alpha.shape)
+                self.Alpha = np.random.rand(*self.Alpha.shape)
 
             writer = tf.summary.FileWriter("logs/train/ACE-Net", graph=self.sess.graph)
             merged = tf.summary.merge_all()
@@ -572,7 +571,7 @@ class ACE(object):
                                 },
                             )
                         writer.add_summary(summary, epoch)
-                        if epoch % (EPOCHS // 2) == 0 and epoch > 0:
+                        if epoch % (EPOCHS // 3) == 0 and epoch > 0:
                             self.Alpha = self.evaluate(save=False)
                     saver.save(self.sess, self.model)
                 except KeyboardInterrupt:
@@ -580,7 +579,7 @@ class ACE(object):
             else:
                 saver.restore(self.sess, self.model)
 
-            self.evaluate(save=False)
+            _ = self.evaluate(save=True)
 
     def transform_images(self):
         if USE_PATCHES:
@@ -641,15 +640,11 @@ class ACE(object):
         d = (d_x + d_y) / 2.0
 
         AUC_b = mt.roc_auc_score(self.mask.flatten(), d.flatten())
-        # print("AUC_b: " + str(AUC_b))
         otsu = threshold_otsu(d)
         CD_map = d >= otsu
         F1_Score_b = mt.f1_score(self.mask.flatten(), CD_map.flatten())
-        # print("F1_Score_b: " + str(F1_Score_b))
         OA_b = mt.accuracy_score(self.mask.flatten(), CD_map.flatten())
-        # print("OA_b: " + str(OA_b))
         KC_b = mt.cohen_kappa_score(self.mask.flatten(), CD_map.flatten())
-        # print("KC_b: " + str(KC_b))
 
         heatmap = self.filtering(d)
         otsu = threshold_otsu(heatmap)  # local_otsu = otsu(heatmap, disk(15))
@@ -662,14 +657,17 @@ class ACE(object):
         conf_map[np.logical_and(np.logical_not(self.mask), CD_map), :] = [0, 1, 0]
 
         AUC = mt.roc_auc_score(self.mask.flatten(), heatmap.flatten())
-        # print("AUC_a: " + str(AUC))
-        F1_Score = mt.f1_score(self.mask.flatten(), CD_map.flatten())
-        # print("F1_Score_a: " + str(F1_Score))
-        OA = mt.accuracy_score(self.mask.flatten(), CD_map.flatten())
-        # print("OA_a: " + str(OA))
+        AUPRC = mt.average_precision_score(self.mask.flatten(), heatmap.flatten())
+
+        PREC_0 = mt.precision_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        PREC_1 = mt.precision_score(self.mask.flatten(), CD_map.flatten())
+        REC_0 = mt.recall_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        REC_1 = mt.recall_score(self.mask.flatten(), CD_map.flatten())
         KC = mt.cohen_kappa_score(self.mask.flatten(), CD_map.flatten())
-        # print("KC_a: " + str(KC))
-        self.evaluation = [AUC, F1_Score, OA, KC]
+        [[TN, FP], [FN, TP]] = mt.confusion_matrix(
+            self.mask.flatten(), CD_map.flatten()
+        )
+        self.evaluation = [TP, TN, FP, FN, PREC_0, REC_0, PREC_1, REC_1, KC, AUC, AUPRC]
         if save:
             self.save_image(255.0 * d_x, "d_x.png")
             self.save_image(255.0 * d_y, "d_y.png")
@@ -684,26 +682,7 @@ class ACE(object):
             else:
                 self.save_image(255.0 * (self.t2 + 1.0) / 2.0, "y.png")
                 self.save_image(255.0 * (y_hat + 1.0) / 2.0, "y_hat.png")
-
-            file1 = open(self.folder + "Evaluation.txt", "w")
-            L = [
-                "BEFORE FILTERING: \n",
-                "AUC: " + str(AUC_b) + " \n",
-                "F1_score: " + str(F1_Score_b) + " \n",
-                "OA: " + str(OA_b) + " \n",
-                "Kappa: " + str(KC_b) + " \n",
-                "\n",
-                "AFTER FILTERING \n",
-                "AUC: " + str(AUC) + " \n",
-                "F1_score: " + str(F1_Score) + " \n",
-                "OA: " + str(OA) + " \n",
-                "Kappa: " + str(KC) + " \n",
-            ]
-
-            file1.writelines(L)
-            file1.close()
-        else:
-            return d
+        return d
 
 
 def run_model():
