@@ -83,11 +83,11 @@ class Kern_AceNet(ChangeDetector):
         self._dec_x.save_weights(self.log_path + "/weights/_dec_x/")
         self._dec_y.save_weights(self.log_path + "/weights/_dec_y/")
 
-    def load_all_weights(self):
-        self._enc_x.load_weights(self.log_path + "/weights/_enc_x/")
-        self._enc_y.load_weights(self.log_path + "/weights/_enc_y/")
-        self._dec_x.load_weights(self.log_path + "/weights/_dec_x/")
-        self._dec_y.load_weights(self.log_path + "/weights/_dec_y/")
+    def load_all_weights(self, folder):
+        self._enc_x.load_weights(folder + "/weights/_enc_x/")
+        self._enc_y.load_weights(folder + "/weights/_enc_y/")
+        self._dec_x.load_weights(folder + "/weights/_dec_x/")
+        self._dec_y.load_weights(folder + "/weights/_dec_y/")
 
     @image_to_tensorboard()
     def enc_x(self, inputs, training=False):
@@ -275,6 +275,7 @@ def test(DATASET="Texas", CONFIG=None):
         training_time += tr_time
 
     cd.final_evaluate(EVALUATE, **CONFIG)
+    cd.save_all_weights()
     final_kappa = cd.metrics_history["cohens kappa"][-1]
     final_acc = cd.metrics_history["ACC"][-1]
     performance = (final_kappa, final_acc)

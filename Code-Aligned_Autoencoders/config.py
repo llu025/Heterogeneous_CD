@@ -25,7 +25,7 @@ def get_config(dataset_name, debug=False):
                 "list_epochs": [25, 25, 25, 25],  # number of training epochs
                 "batches": 10,  # number of batches per epoch
                 "batch_size": 10,  # number of samples per batch
-                "patch_size": 100,  # square size of patches extracted for training
+                "patch_size": 100,  # size of patches extracted for training
                 "affinity_batch_size": 500,  # batch size for prior computation
                 "affinity_patch_size": 20,  # patch size for prior computation
                 "affinity_stride": 5,  # stride for prior computation
@@ -51,7 +51,7 @@ def get_config(dataset_name, debug=False):
 
 
 def get_config_kACE(dataset_name, debug=False):
-    CONFIG = get_config(dataset_name, debug=False)
+    CONFIG = get_config(dataset_name, debug=debug)
     CONFIG.update(
         {
             "cycle_lambda": 1,  # weight for cyclic loss term
@@ -64,7 +64,7 @@ def get_config_kACE(dataset_name, debug=False):
 
 
 def get_config_CGAN(dataset_name, debug=False):
-    CONFIG = get_config(dataset_name, debug=False)
+    CONFIG = get_config(dataset_name, debug=debug)
     CONFIG.update(
         {
             "Lambda": float(5),  # weight for L1 term
@@ -77,7 +77,7 @@ def get_config_CGAN(dataset_name, debug=False):
 
 
 def get_config_SCCN(dataset_name, debug=False):
-    CONFIG = get_config(dataset_name, debug=False)
+    CONFIG = get_config(dataset_name, debug=debug)
     CONFIG.update(
         {
             "Lambda": 0.2,  # weight for loss term
