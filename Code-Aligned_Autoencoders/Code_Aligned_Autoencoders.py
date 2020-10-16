@@ -131,7 +131,10 @@ class Kern_AceNet(ChangeDetector):
                 self._dec_x(x_code, training),
                 self._dec_y(y_code, training),
             )
-            zx_t_zy = ztz(image_in_patches(x_code, 20), image_in_patches(y_code, 20))
+            # zx_t_zy = ztz(image_in_patches(x_code, 20), image_in_patches(y_code, 20))
+            zx_t_zy = ztz(
+                tf.image.central_crop(x_code, 0.2), tf.image.central_crop(y_code, 0.2)
+            )
             retval = [x_hat, y_hat, x_dot, y_dot, x_tilde, y_tilde, zx_t_zy]
 
         else:
@@ -162,7 +165,9 @@ class Kern_AceNet(ChangeDetector):
                 [x, y], training=True
             )
 
-            Kern = 1.0 - Degree_matrix(image_in_patches(x, 20), image_in_patches(y, 20))
+            Kern = 1.0 - Degree_matrix(
+                tf.image.central_crop(x, 0.2), tf.image.central_crop(y, 0.2)
+            )
             kernels_loss = self.kernels_lambda * self.loss_object(Kern, ztz)
             l2_loss_k = sum(self._enc_x.losses) + sum(self._enc_y.losses)
             targets_k = (
@@ -242,6 +247,7 @@ def test(DATASET="Texas", CONFIG=None):
     x_im, y_im, EVALUATE, (C_X, C_Y) = datasets.fetch(DATASET, **CONFIG)
     if tf.test.is_gpu_available() and not CONFIG["debug"]:
         C_CODE = 3
+        print("here")
         TRANSLATION_SPEC = {
             "enc_X": {"input_chs": C_X, "filter_spec": [50, 50, C_CODE]},
             "enc_Y": {"input_chs": C_Y, "filter_spec": [50, 50, C_CODE]},
@@ -249,6 +255,7 @@ def test(DATASET="Texas", CONFIG=None):
             "dec_Y": {"input_chs": C_CODE, "filter_spec": [50, 50, C_Y]},
         }
     else:
+        print("why here?")
         C_CODE = 1
         TRANSLATION_SPEC = {
             "enc_X": {"input_chs": C_X, "filter_spec": [C_CODE]},
@@ -274,8 +281,8 @@ def test(DATASET="Texas", CONFIG=None):
         cross_loss_weight = 1.0 - alpha
         training_time += tr_time
 
-    cd.final_evaluate(EVALUATE, **CONFIG)
     cd.save_all_weights()
+    cd.final_evaluate(EVALUATE, **CONFIG)
     final_kappa = cd.metrics_history["cohens kappa"][-1]
     final_acc = cd.metrics_history["ACC"][-1]
     performance = (final_kappa, final_acc)
