@@ -209,7 +209,7 @@ def test(DATASET="Texas", CONFIG=None):
     Pu = tf.ones(x.shape[0], dtype=tf.float32)
     batches = tot_patches // bs + (tot_patches % bs != 0)
     CONFIG.update({"tot_patches": tot_patches, "batches": batches})
-    if tf.test.is_gpu_available() and not CONFIG["debug"]:
+    if tf.config.list_physical_devices("GPU") and not CONFIG["debug"]:
         TRANSLATION_SPEC = {
             "Generator": {
                 "shapes": [ps, C_Y],

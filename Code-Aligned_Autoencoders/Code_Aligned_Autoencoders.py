@@ -245,7 +245,7 @@ def test(DATASET="Texas", CONFIG=None):
         CONFIG = get_config_kACE(DATASET)
     print(f"Loading {DATASET} data")
     x_im, y_im, EVALUATE, (C_X, C_Y) = datasets.fetch(DATASET, **CONFIG)
-    if tf.test.is_gpu_available() and not CONFIG["debug"]:
+    if tf.config.list_physical_devices("GPU") and not CONFIG["debug"]:
         C_CODE = 3
         print("here")
         TRANSLATION_SPEC = {

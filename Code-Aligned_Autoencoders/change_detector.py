@@ -7,7 +7,7 @@ from tqdm import trange
 
 from filtering import threshold_otsu
 from decorators import image_to_tensorboard, timed
-from metrics import CohenKappa
+from tensorflow_addons.metrics import CohenKappa
 from config import get_config
 import datasets
 

@@ -283,7 +283,7 @@ def fetch_fixed_dataset(name, patch_size=100, **kwargs):
     training_data = training_data.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     dataset = [tf.expand_dims(tensor, 0) for tensor in [x_im, y_im, target_cm]]
-    if not tf.test.is_gpu_available():
+    if not tf.config.list_physical_devices("GPU"):
         dataset = [tf.image.central_crop(tensor, 0.1) for tensor in dataset]
     evaluation_data = tf.data.Dataset.from_tensor_slices(tuple(dataset))
 
@@ -307,7 +307,7 @@ def fetch_CGAN(name, **kwargs):
     """
     ps = kwargs.get("patch_size")
     y_im, x_im, target_cm = DATASETS[name](prepare_data[name])
-    if not tf.test.is_gpu_available():
+    if not tf.config.list_physical_devices("GPU"):
         dataset = [
             tf.image.central_crop(tensor, 0.1) for tensor in [x_im, y_im, target_cm]
         ]
@@ -336,7 +336,8 @@ def fetch(name, patch_size=100, **kwargs):
             channels - tuple (c_x, c_y), number of channels for domains x and y
     """
     x_im, y_im, target_cm = DATASETS[name](prepare_data[name])
-    if not tf.test.is_gpu_available():
+
+    if not tf.config.list_physical_devices("GPU"):
         dataset = [
             tf.image.central_crop(tensor, 0.1) for tensor in [x_im, y_im, target_cm]
         ]

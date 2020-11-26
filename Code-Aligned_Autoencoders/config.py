@@ -19,7 +19,7 @@ def get_config(dataset_name, debug=False):
         "minimum improvement": 1e-2,  # minimum improvement in the kernels loss
     }
 
-    if tf.test.is_gpu_available() and not debug:
+    if tf.config.list_physical_devices("GPU") and not debug:
         CONFIG.update(
             {
                 "list_epochs": [25, 25, 25, 25],  # number of training epochs
