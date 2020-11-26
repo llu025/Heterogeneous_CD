@@ -85,34 +85,34 @@ class CGAN(ChangeDetector):
     @image_to_tensorboard()
     def gen(self, input, gen_chs):
         """ Wraps encoder call for TensorBoard printing and image save """
-        ch = input.shape[-1]
+        h, w, ch = input.shape[1], input.shape[2], input.shape[-1]
         input = image_in_patches(input, self.ps)
-        h, w = input.shape[1], input.shape[2]
-        input = tf.reshape(input, [-1, self.ps, self.ps, ch])
         nb = input.shape[0] // 200 + (input.shape[0] % 200)
         tmp = tf.zeros([1, self.ps, self.ps, gen_chs], dtype=tf.float32)
         for i in range(nb):
             start = i * 200
             stop = tf.reduce_min([input.shape[0], start + 200])
             tmp = tf.concat([tmp, self._gen(input[start:stop])], 0)
-        tmp = tf.convert_to_tensor(tmp[1:])
-        return tf.nn.depth_to_space(tf.reshape(tmp, [1, h, w, -1]), self.ps)
+        tmp = tf.nn.depth_to_space(
+            tf.reshape(tmp[1:], [1, h // self.ps, w // self.ps, -1]), self.ps
+        )
+        return tf.reshape(tmp, [1, h, w, -1])
 
     @image_to_tensorboard()
     def approx(self, input):
         """ Wraps encoder call for TensorBoard printing and image save """
-        ch = input.shape[-1]
+        h, w, ch = input.shape[1], input.shape[2], input.shape[-1]
         input = image_in_patches(input, self.ps)
-        h, w = input.shape[1], input.shape[2]
-        input = tf.reshape(input, [-1, self.ps, self.ps, ch])
         nb = input.shape[0] // 200 + (input.shape[0] % 200)
         tmp = tf.zeros([1, self.ps, self.ps, ch], dtype=tf.float32)
         for i in range(nb):
             start = i * 200
             stop = tf.reduce_min([input.shape[0], start + 200])
             tmp = tf.concat([tmp, self._approx(input[start:stop])], 0)
-        tmp = tf.convert_to_tensor(tmp[1:])
-        return tf.nn.depth_to_space(tf.reshape(tmp, [1, h, w, -1]), self.ps)
+        tmp = tf.nn.depth_to_space(
+            tf.reshape(tmp[1:], [1, h // self.ps, w // self.ps, -1]), self.ps
+        )
+        return tf.reshape(tmp, [1, h, w, -1])
 
     def __call__(self, inputs, training=False):
         x, y = inputs
