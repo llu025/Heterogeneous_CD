@@ -172,7 +172,7 @@ class CGAN(ChangeDetector):
         grads = []
         for i, v in enumerate(targets):
             grads += tape.gradient(tot_loss[i], v)
-        targets = [item for item in sublist for sublist in targets]
+        targets = [item for sublist in targets for item in sublist]
         if self.clipnorm is not None:
             clipped_grads, _ = tf.clip_by_global_norm(grads, self.clipnorm)
         self._optimizer_all.apply_gradients(zip(clipped_grads, targets))
