@@ -116,6 +116,11 @@ def affinity(x):
     krnl_width = tf.math.top_k(A, k=A.shape[-1]).values
     krnl_width = tf.reduce_mean(input_tensor=krnl_width[:, :, (h * w) // 4], axis=1)
     krnl_width = tf.reshape(krnl_width, (-1, 1, 1))
+    krnl_width = tf.where(
+        tf.math.equal(krnl_width, tf.zeros_like(krnl_width)),
+        tf.ones_like(krnl_width),
+        krnl_width,
+    )
     A = tf.exp(-(tf.divide(A, krnl_width) ** 2))
     return A
 
