@@ -80,6 +80,7 @@ class ChangeDetector:
             kwargs.get("evaluation_frequency", 1), dtype=tf.int64
         )
         self.epoch = tf.Variable(0, dtype=tf.int64)
+        self.stopping = tf.Variable(0, dtype=tf.int32)
 
     @image_to_tensorboard(static_name=None)
     # @tf.function
@@ -192,6 +193,7 @@ class ChangeDetector:
                                Can be decorated with image_to_tensorboard
         """
 
+        self.stopping.assign(0)
         for epoch in trange(self.epoch.numpy() + 1, self.epoch.numpy() + epochs + 1):
             self.epoch.assign(epoch)
             tf.summary.experimental.set_step(self.epoch)

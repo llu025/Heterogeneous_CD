@@ -16,13 +16,13 @@ def get_config(dataset_name, debug=False):
         "filter_": decorated_median_filter("z_median_filtered_diff"),
         "final_filter": decorated_gaussian_filter("z_gaussian_filtered_diff"),
         "patience": 10,  # epochs after which training stops if kernel loss does not improve much
-        "minimum improvement": 1e-2,  # minimum improvement in the kernels loss
+        "minimum improvement": 1e-3,  # minimum improvement in the kernels loss
     }
 
     if tf.config.list_physical_devices("GPU") and not debug:
         CONFIG.update(
             {
-                "list_epochs": [25, 25, 25, 25],  # number of training epochs
+                "list_epochs": [50, 50, 50, 50],  # number of training epochs
                 "batches": 10,  # number of batches per epoch
                 "batch_size": 10,  # number of samples per batch
                 "patch_size": 100,  # size of patches extracted for training

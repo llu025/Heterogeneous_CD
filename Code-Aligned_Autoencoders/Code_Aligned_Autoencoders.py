@@ -41,10 +41,9 @@ class Kern_AceNet(ChangeDetector):
         self.recon_lambda = kwargs.get("recon_lambda", 0.1)
         self.l2_lambda = kwargs.get("l2_lambda", 1e-6)
         self.kernels_lambda = kwargs.get("kernels_lambda", 1)
-        self.min_impr = kwargs.get("minimum improvement", 1e-2)
-        self.last_losses = []
-        self.patience = kwargs.get("patience", 10) + 1
         self.aps = kwargs.get("affinity_patch_size", 20)
+        self.min_impr = kwargs.get("minimum improvement", 1e-3)
+        self.patience = kwargs.get("patience", 10)
 
         # encoders of X and Y
         self._enc_x = ImageTranslationNetwork(
@@ -74,8 +73,8 @@ class Kern_AceNet(ChangeDetector):
         self.train_metrics["l2"] = tf.keras.metrics.Sum(name="l2 MSE sum")
         self.train_metrics["total"] = tf.keras.metrics.Sum(name="total MSE sum")
 
-        # Track kernel loss history for use in early stopping
-        self.metrics_history["krnls"] = []
+        # Track total loss history for use in early stopping
+        self.metrics_history["total"] = []
 
     def save_all_weights(self):
         self._enc_x.save_weights(self.log_path + "/weights/_enc_x/")
@@ -107,12 +106,29 @@ class Kern_AceNet(ChangeDetector):
         return self._dec_y(inputs, training)
 
     def early_stopping_criterion(self):
-        self.last_losses = np.array(self.metrics_history["krnls"][-self.patience :])
-        diffs = self.last_losses[:-1] - self.last_losses[-1]
-        going_donw = tf.reduce_all(diffs < self.min_impr)
-        going_down = False
-        tf.print("kernels_loss", self.last_losses[-1])
-        return going_down
+        temp = tf.math.reduce_min([self.stopping, self.patience]) + 1
+        self.stopping.assign_add(1)
+        last_losses = np.array(self.metrics_history["total"][-(temp):])
+        idx_min = np.argmin(last_losses)
+        if idx_min == (temp - 1):
+            self.save_all_weights()
+        while idx_min > 0:
+            idx_2nd_min = np.argmin(last_losses[:idx_min])
+            improvement = last_losses[idx_2nd_min] - last_losses[idx_min]
+            if improvement > self.min_impr:
+                break
+            else:
+                idx_min = idx_2nd_min
+        stop = idx_min == 0 and self.stopping > self.patience
+        tf.print(
+            "total_loss",
+            last_losses[-1],
+            "Target",
+            last_losses[idx_min],
+            "Left",
+            self.patience - (temp - 1) + idx_min,
+        )
+        return stop
 
     @tf.function
     def __call__(self, inputs, training=False):
@@ -281,7 +297,7 @@ def test(DATASET="Texas", CONFIG=None):
         cross_loss_weight = 1.0 - alpha
         training_time += tr_time
 
-    cd.save_all_weights()
+    cd.load_all_weights(cd.log_path)
     cd.final_evaluate(EVALUATE, **CONFIG)
     final_kappa = cd.metrics_history["cohens kappa"][-1]
     final_acc = cd.metrics_history["ACC"][-1]
