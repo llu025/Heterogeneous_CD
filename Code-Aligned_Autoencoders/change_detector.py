@@ -10,9 +10,10 @@ from decorators import image_to_tensorboard, timed
 from tensorflow_addons.metrics import CohenKappa
 from config import get_config
 import datasets
-
-# instead of "from tensorflow_addons.metrics import CohenKappa" due to
-# https://github.com/tensorflow/addons/pull/675
+import numpy as np
+from sklearn.metrics import roc_curve, auc
+from matplotlib import pyplot as plt
+from pdb import set_trace as bp
 
 
 class ChangeDetector:
@@ -240,6 +241,7 @@ class ChangeDetector:
         difference_img = self((x, y))
         if filter_ is not None:
             difference_img = filter_(self, x, y, difference_img)
+            self._ROC_curve(target_change_map, difference_img)
 
         self._compute_metrics(
             target_change_map, difference_img, self.difference_img_metrics
@@ -317,6 +319,35 @@ class ChangeDetector:
 
     def save_model(self):
         print("ChangeDetector.save_model() is not implemented")
+
+    @image_to_tensorboard(static_name="z_ROC_Curve")
+    def _ROC_curve(self, y_true, y_pred):
+        y_true, y_pred = tf.reshape(y_true, [-1]), tf.reshape(y_pred, [-1])
+        fpr, tpr, _ = roc_curve(y_true, y_pred)
+        roc_auc = auc(fpr, tpr)
+        fig = plt.figure()
+        plt.plot(
+            fpr,
+            tpr,
+            color="darkorange",
+            lw=2,
+            label="ROC curve (area = %0.2f)" % roc_auc,
+        )
+        plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("Receiver operating characteristic curve")
+        plt.legend(loc="lower right")
+        fig.canvas.draw()
+        data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
+        data = tf.convert_to_tensor(
+            data.reshape(fig.canvas.get_width_height()[::-1] + (3,))[np.newaxis, ...],
+            dtype=tf.float32,
+        )
+        plt.close()
+        return data
 
 
 def test(DATASET="Texas"):
