@@ -3,6 +3,7 @@ import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 from PIL import Image
+from PIL import ImageOps
 from skimage.measure import block_reduce
 import numpy as np
 import tensorflow as tf
@@ -413,7 +414,7 @@ class SCCN(object):
                     self.im = im
             except KeyboardInterrupt:
                 print("\nTraining interrupted")
-            self.evaluate(sess, save=False)
+            self.evaluate(sess, save=True)
 
     def evaluate(self, session, save):
         mask = self.mask
@@ -424,16 +425,6 @@ class SCCN(object):
         d = d[0]
         d[d > np.mean(d) + 3.0 * np.std(d)] = np.mean(d) + 3.0 * np.std(d)
         d = d / np.max(d)
-        AUC_b = mt.roc_auc_score(mask.flatten(), d.flatten())
-        # print('AUC_b: ' + str(AUC_b))
-        otsu = threshold_otsu(d)
-        CD_map = d >= otsu
-        F1_Score_b = mt.f1_score(mask.flatten(), CD_map.flatten())
-        # print('F1_Score_b: ' + str(F1_Score_b))
-        OA_b = mt.accuracy_score(mask.flatten(), CD_map.flatten())
-        # print('OA_b: ' + str(OA_b))
-        KC_b = mt.cohen_kappa_score(mask.flatten(), CD_map.flatten())
-        # print('KC_b: ' + str(KC_b))
 
         heatmap = self.filtering(d)
         otsu = threshold_otsu(heatmap)
@@ -445,15 +436,18 @@ class SCCN(object):
         Confusion_map[np.logical_and(mask, np.logical_not(CD_map)), :] = [1, 0, 0]
         Confusion_map[np.logical_and(np.logical_not(mask), CD_map), :] = [0, 1, 0]
 
-        AUC = mt.roc_auc_score(mask.flatten(), heatmap.flatten())
-        # print('AUC_a: ' + str(AUC))
-        F1_Score = mt.f1_score(mask.flatten(), CD_map.flatten())
-        # print('F1_Score_a: ' + str(F1_Score))
-        OA = mt.accuracy_score(mask.flatten(), CD_map.flatten())
-        # print('OA_a: ' + str(OA))
-        KC = mt.cohen_kappa_score(mask.flatten(), CD_map.flatten())
-        # print('KC_a: ' + str(KC))
-        self.evaluation = [AUC, F1_Score, OA, KC]
+        AUC = mt.roc_auc_score(self.mask.flatten(), heatmap.flatten())
+        AUPRC = mt.average_precision_score(self.mask.flatten(), heatmap.flatten())
+
+        PREC_0 = mt.precision_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        PREC_1 = mt.precision_score(self.mask.flatten(), CD_map.flatten())
+        REC_0 = mt.recall_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        REC_1 = mt.recall_score(self.mask.flatten(), CD_map.flatten())
+        KC = mt.cohen_kappa_score(self.mask.flatten(), CD_map.flatten())
+        [[TN, FP], [FN, TP]] = mt.confusion_matrix(
+            self.mask.flatten(), CD_map.flatten()
+        )
+        self.evaluation = [TP, TN, FP, FN, PREC_0, REC_0, PREC_1, REC_1, KC, AUC, AUPRC]
         if save:
             if self.img_X.shape[-1] > 3:
                 self.save_image(255.0 * (self.img_X[0, ..., 1:4] + 1.0) / 2.0, "x.png")
@@ -469,23 +463,7 @@ class SCCN(object):
             self.save_image(255.0 * h_x[0, ..., 1:4], "H_X_After.png")
             self.save_image(255.0 * h_y[0, ..., 1:4], "H_Y_After.png")
 
-            file1 = open(self.folder + "Evaluation.txt", "w")
-            L = [
-                "BEFORE FILTERING: \n",
-                "AUC: " + str(AUC_b) + " \n",
-                "F1_score: " + str(F1_Score_b) + " \n",
-                "OA: " + str(OA_b) + " \n",
-                "Kappa: " + str(KC_b) + " \n",
-                "\n",
-                "AFTER FILTERING \n",
-                "AUC: " + str(AUC) + " \n",
-                "F1_score: " + str(F1_Score) + " \n",
-                "OA: " + str(OA) + " \n",
-                "Kappa: " + str(KC) + " \n",
-            ]
-
-            file1.writelines(L)
-            file1.close()
+        return d
 
 
 def run_model(which_ch1=None, which_ch2=None):

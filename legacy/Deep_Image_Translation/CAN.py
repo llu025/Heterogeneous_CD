@@ -1,9 +1,9 @@
-import sys
 import scipy.io
 import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 from PIL import Image
+from PIL import ImageOps
 from skimage.measure import block_reduce
 import numpy as np
 import tensorflow as tf
@@ -180,15 +180,17 @@ class CAN(object):
 
     def CAN_Loss(self):
         with tf.name_scope("Losses"):
-            self.loss_D = tf.reduce_mean(-(tf.log(self.p1)) * self.Pu)
-            self.loss_D += tf.reduce_mean(-(tf.log(1.0 - self.p2)) * self.Pu)
+            self.loss_D = tf.reduce_mean(-(tf.log(self.p1 + 10e-10)) * self.Pu)
+            self.loss_D += tf.reduce_mean(-(tf.log(1.0 - self.p2 + 10e-10)) * self.Pu)
+
+            self.loss_G_d = tf.reduce_mean(tf.log(self.p1 + 10e-10) * self.Pu)
+            self.loss_G_d += tf.reduce_mean(tf.log(1.0 - self.p2 + 10e-10) * self.Pu)
 
             weights = tf.tile(self.Pu, [1, PATCH_SIZE, PATCH_SIZE, self.shape_2[-1]])
             self.loss_G_L1 = tf.losses.absolute_difference(
                 labels=self.x, predictions=self.G, weights=weights
             )
-            self.loss_G_d = tf.reduce_mean(tf.log(self.p1) * self.Pu)
-            self.loss_G_d += tf.reduce_mean(tf.log(1.0 - self.p2) * self.Pu)
+
             self.loss_A = tf.losses.absolute_difference(
                 labels=self.G, predictions=self.A, weights=weights
             )
@@ -250,13 +252,10 @@ class CAN(object):
                 )
             weights = tf.tile(self.Pu, [1, PATCH_SIZE, PATCH_SIZE, 1])
             tf.summary.image("Pu", tf.cast(weights * 255, tf.uint8), max_outputs=10)
-
             tf.summary.scalar("Loss_Dis", self.loss_D)
             tf.summary.scalar("Loss_Gen_L1", self.loss_G_L1)
             tf.summary.scalar("Loss_Gen_d", self.loss_G_d)
             tf.summary.scalar("Loss_App", self.loss_A)
-            tf.summary.histogram("P1", self.p1)
-            tf.summary.histogram("P2", self.p2)
 
     def train_model(self):
         saver = tf.train.Saver()
@@ -270,7 +269,6 @@ class CAN(object):
             total_parameters += variable_parameters
         print("Total parameters : {}".format(total_parameters))
         self.idx = self.idx_patches(self.mask)
-        # idx = idx[:batch_size*2] ## TO CHECK SANITY, RUN SHORT EPOCHS
         with tf.Session(config=config) as self.sess:
             writer_train = tf.summary.FileWriter("logs/train/CAN", self.sess.graph)
             merged = tf.summary.merge_all()
@@ -285,7 +283,6 @@ class CAN(object):
                 try:
                     for epoch in tqdm(range(EPOCHS)):
                         idx_perm = np.random.permutation(self.idx.shape[0])
-                        prova = 1
                         for p in tqdm(range(num_batches)):
                             temp_idx = self.idx[idx_perm[:BATCH_SIZE], :2]
                             Pu = self.idx[idx_perm[:BATCH_SIZE], 2]
@@ -309,20 +306,18 @@ class CAN(object):
                 saver.save(self.sess, self.model_name)
             else:
                 saver.restore(self.sess, self.model_name)
-            self.evaluate(save=False)
+            self.evaluate(save=True)
 
     def evaluate(self, save):
         mask = self.mask
         idx = np.copy(self.idx)
         x_hat = np.zeros_like(self.t2)
         y_hat = np.zeros_like(self.t2)
-        runs = idx.shape[0] // BATCH_SIZE
+        runs = (idx.shape[0] // BATCH_SIZE) + (idx.shape[0] % BATCH_SIZE != 0)
         done_runs = 0
         diffs = []
         img_Pu = np.zeros(mask.shape)
         covers = np.zeros(mask.shape)
-        if idx.shape[0] % BATCH_SIZE != 0:
-            runs += 1
         for i in tqdm(range(runs)):
             temp_idx = idx[:BATCH_SIZE]
             batch_t1 = self.patches_from_idx(self.t1, temp_idx)
@@ -370,11 +365,18 @@ class CAN(object):
         otsu = threshold_otsu(heatmap)
         CD_map = heatmap >= otsu
 
-        AUC = mt.roc_auc_score(mask.flatten(), heatmap.flatten())
-        F1_Score = mt.f1_score(mask.flatten(), CD_map.flatten())
-        OA = mt.accuracy_score(mask.flatten(), CD_map.flatten())
-        KC = mt.cohen_kappa_score(mask.flatten(), CD_map.flatten())
-        self.evaluation = [AUC, F1_Score, OA, KC]
+        AUC = mt.roc_auc_score(self.mask.flatten(), heatmap.flatten())
+        AUPRC = mt.average_precision_score(self.mask.flatten(), heatmap.flatten())
+
+        PREC_0 = mt.precision_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        PREC_1 = mt.precision_score(self.mask.flatten(), CD_map.flatten())
+        REC_0 = mt.recall_score(self.mask.flatten(), CD_map.flatten(), pos_label=0)
+        REC_1 = mt.recall_score(self.mask.flatten(), CD_map.flatten())
+        KC = mt.cohen_kappa_score(self.mask.flatten(), CD_map.flatten())
+        [[TN, FP], [FN, TP]] = mt.confusion_matrix(
+            self.mask.flatten(), CD_map.flatten()
+        )
+        self.evaluation = [TP, TN, FP, FN, PREC_0, REC_0, PREC_1, REC_1, KC, AUC, AUPRC]
         if save:
             Conf_map = np.zeros_like(CD_map)
             Conf_map = np.tile(Conf_map[..., np.newaxis], (1, 1, 3))
@@ -458,7 +460,7 @@ def run_model():
     time1 = time.time()
     can = CAN(t1, t2, mask, folder)
     can.train_model()
-    return CAN.evaluation, time.time() - time1
+    return can.evaluation, time.time() - time1
 
 
 if __name__ == "__main__":
