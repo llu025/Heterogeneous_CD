@@ -29,7 +29,7 @@ LAMBDA = 0.2
 
 PRETRAIN = 1
 DATASET = args.dataset
-NAME_DATASET = ["Texas", "California"]
+NAME_DATASET = ["Texas", "California", "Shuguang"]
 
 LEARNING_RATE = 10e-4
 MAX_GRAD_NORM = 1.0
@@ -455,11 +455,14 @@ class SCCN(object):
         # print('KC_a: ' + str(KC))
         self.evaluation = [AUC, F1_Score, OA, KC]
         if save:
-            self.save_image(255.0 * (self.img_X[0, ..., 1:4] + 1.0) / 2.0, "x.png")
+            if self.img_X.shape[-1] > 3:
+                self.save_image(255.0 * (self.img_X[0, ..., 1:4] + 1.0) / 2.0, "x.png")
+            else:
+                self.save_image(255.0 * (np.squeeze(self.img_X) + 1.0) / 2.0, "x.png")
             if self.img_Y.shape[-1] > 3:
                 self.save_image(255.0 * (self.img_Y[0, ..., 3:6] + 1.0) / 2.0, "y.png")
             else:
-                self.save_image(255.0 * (self.img_Y[0] + 1.0) / 2.0, "y.png")
+                self.save_image(255.0 * (np.squeeze(self.img_Y) + 1.0) / 2.0, "y.png")
 
             self.save_image(255.0 * heatmap, "d_filtered.png")
             self.save_image(255.0 * Confusion_map, "Confusion_map.png")
@@ -519,6 +522,15 @@ def run_model(which_ch1=None, which_ch2=None):
         t2 = np.reshape(temp2, np.shape(t2))
         del temp1, temp2, limits, temp
         folder = "Results/SCCN/Texas/"
+    elif DATASET == 2:
+        mat = scipy.io.loadmat("data/Shuguang/shuguang_dataset.mat")
+        t1 = np.array(mat["t1"], dtype=float)[:, :, 0]
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.array(mat["ROI"], dtype=bool)
+        t1 = t1 * 2.0 - 1.0
+        t1 = t1[:, :, np.newaxis]
+        t2 = t2 * 2.0 - 1.0
+        folder = "Results/SCCN/Shuguang/"
     else:
         print("Wrong data set")
         exit()

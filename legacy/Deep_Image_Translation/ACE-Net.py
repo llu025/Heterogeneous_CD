@@ -42,7 +42,7 @@ args = parser.parse_args()
 DATASET = args.dataset
 PRE_TRAIN = 0
 TRAIN = 1
-NAME_DATASET = ["Texas", "California"]
+NAME_DATASET = ["Texas", "California", "Shuguang"]
 USE_PATCHES = 0  # DATASET
 
 LEARNING_RATE = 10e-5
@@ -72,6 +72,9 @@ if DATASET == 1:
 elif DATASET == 0:
     nc1 = 7
     nc2 = 10
+elif DATASET == 2:
+    nc1 = 1
+    nc2 = 3
 else:
     print("Wrong dataset")
     exit()
@@ -415,7 +418,7 @@ class ACE(object):
             d = self.get_affinities(
                 self.remove_borders(x_resize), self.remove_borders(y_resize)
             )
-            d = numpy.array(Image.fromarray(d).resize((D.shape[0], D.shape[1])))
+            d = np.array(Image.fromarray(d).resize((D.shape[0], D.shape[1])))
             self.save_image(255.0 * d, "Aff_" + str(i) + ".png")
             D[..., i] = d
         return np.mean(D, axis=-1)
@@ -674,14 +677,18 @@ class ACE(object):
             self.save_image(255.0 * d, "d.png")
             self.save_image(255.0 * heatmap, "d_filtered.png")
             self.save_image(255.0 * conf_map, "Confusion_map.png")
-            self.save_image(255.0 * (self.t1[..., 1:4] + 1.0) / 2.0, "x.png")
-            self.save_image(255.0 * (x_hat[..., 1:4] + 1.0) / 2.0, "x_hat.png")
+            if nc1 > 3:
+                self.save_image(255.0 * (self.t1[..., 1:4] + 1.0) / 2.0, "x.png")
+                self.save_image(255.0 * (x_hat[..., 1:4] + 1.0) / 2.0, "x_hat.png")
+            else:
+                self.save_image(255.0 * (np.squeeze(self.t1) + 1.0) / 2.0, "x.png")
+                self.save_image(255.0 * (np.squeeze(x_hat) + 1.0) / 2.0, "x_hat.png")
             if nc2 > 3:
                 self.save_image(255.0 * (self.t2[..., 3:6] + 1.0) / 2.0, "y.png")
                 self.save_image(255.0 * (y_hat[..., 3:6] + 1.0) / 2.0, "y_hat.png")
             else:
-                self.save_image(255.0 * (self.t2 + 1.0) / 2.0, "y.png")
-                self.save_image(255.0 * (y_hat + 1.0) / 2.0, "y_hat.png")
+                self.save_image(255.0 * (np.squeeze(self.t2) + 1.0) / 2.0, "y.png")
+                self.save_image(255.0 * (np.squeeze(y_hat) + 1.0) / 2.0, "y_hat.png")
         return d
 
 
@@ -716,6 +723,14 @@ def run_model():
         t1 = np.reshape(temp1, np.shape(t1))
         t2 = np.reshape(temp2, np.shape(t2))
         del temp1, temp2, limits, temp
+    elif DATASET == 2:
+        mat = scipy.io.loadmat("data/Shuguang/shuguang_dataset.mat")
+        t1 = np.array(mat["t1"], dtype=float)[:, :, 0]
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.array(mat["ROI"], dtype=bool)
+        t1 = t1 * 2.0 - 1.0
+        t1 = t1[:, :, np.newaxis]
+        t2 = t2 * 2.0 - 1.0
     else:
         print("Wrong data set")
         exit()

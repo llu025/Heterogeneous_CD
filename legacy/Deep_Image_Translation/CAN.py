@@ -30,7 +30,7 @@ LAMBDA = 5
 
 TRAIN = 1
 DATASET = args.dataset
-NAME_DATASET = ["Texas", "California"]
+NAME_DATASET = ["Texas", "California", "Shuguang"]
 RUNS = args.runs
 RUN = args.run
 
@@ -385,38 +385,20 @@ class CAN(object):
 
             self.save_image(255.0 * d, "d.png")
             self.save_image(255.0 * heatmap, "d_filtered.png")
-            self.save_image(255.0 * conf_map, "Confusion_map.png")
+            self.save_image(255.0 * Conf_map, "Confusion_map.png")
             self.save_image(255.0 * img_Pu, "1 - Pu.png")
             if self.t1.shape[-1] > 3:
                 self.save_image(255.0 * (self.t1[..., 1:4] + 1.0) / 2.0, "t1_y.png")
             else:
-                self.save_image(255.0 * (self.t1 + 1.0) / 2.0, "t1_y.png")
+                self.save_image(255.0 * (np.squeeze(self.t1) + 1.0) / 2.0, "t1_y.png")
             if self.t2.shape[-1] > 3:
                 self.save_image(255.0 * (self.t2[..., 3:6] + 1.0) / 2.0, "t2_x.png")
                 self.save_image(255.0 * (y_hat[..., 3:6] + 1.0) / 2.0, "t1_y_hat.png")
                 self.save_image(255.0 * (x_hat[..., 3:6] + 1.0) / 2.0, "t2_x_hat.png")
             else:
-                self.save_image(255.0 * (self.t2 + 1.0) / 2.0, "t2_x.png")
-                self.save_image(255.0 * (y_hat + 1.0) / 2.0, "t1_y_hat.png")
-                self.save_image(255.0 * (x_hat + 1.0) / 2.0, "t2_x_hat.png")
-
-            file1 = open(folder + "Evaluation.txt", "w")
-            L = [
-                "BEFORE FILTERING: \n",
-                "AUC: " + str(AUC_b) + " \n",
-                "F1_score: " + str(F1_Score_b) + " \n",
-                "OA: " + str(OA_b) + " \n",
-                "Kappa: " + str(KC_b) + " \n",
-                "\n",
-                "AFTER FILTERING \n",
-                "AUC: " + str(AUC) + " \n",
-                "F1_score: " + str(F1_Score) + " \n",
-                "OA: " + str(OA) + " \n",
-                "Kappa: " + str(KC) + " \n",
-            ]
-
-            file1.writelines(L)
-            file1.close()
+                self.save_image(255.0 * (np.squeeze(self.t2) + 1.0) / 2.0, "t2_x.png")
+                self.save_image(255.0 * (np.squeeze(y_hat) + 1.0) / 2.0, "t1_y_hat.png")
+                self.save_image(255.0 * (np.squeeze(x_hat) + 1.0) / 2.0, "t2_x_hat.png")
 
 
 def run_model():
@@ -453,6 +435,19 @@ def run_model():
         t2 = np.reshape(temp2, np.shape(t2))
         del temp1, temp2, limits, temp
         folder = "Results/CAN/Texas/"
+    elif DATASET == 2:
+        mat = scipy.io.loadmat("data/Shuguang/shuguang_dataset.mat")
+        t1 = np.array(mat["t1"], dtype=float)[:, :, 0]
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.array(mat["ROI"], dtype=bool)
+        t1 = t1 * 2.0 - 1.0
+        t1 = t1[:, :, np.newaxis]
+        t2 = t2 * 2.0 - 1.0
+        temp = t2
+        t2 = t1
+        t1 = temp
+        del temp
+        folder = "Results/CAN/Shuguang/"
     else:
         print("Wrong data set")
         exit()
