@@ -36,14 +36,14 @@ class Kern_AceNet(ChangeDetector):
 
         super().__init__(**kwargs)
 
-        self.cycle_lambda = kwargs.get("cycle_lambda", 0.2)
-        self.cross_lambda = kwargs.get("cross_lambda", 0.1)
-        self.recon_lambda = kwargs.get("recon_lambda", 0.1)
-        self.l2_lambda = kwargs.get("l2_lambda", 1e-6)
+        self.cycle_lambda = kwargs.get("cycle_lambda", 1)
+        self.cross_lambda = kwargs.get("cross_lambda", 1)
+        self.recon_lambda = kwargs.get("recon_lambda", 1)
+        self.l2_lambda = kwargs.get("l2_lambda", 1e-4)
         self.kernels_lambda = kwargs.get("kernels_lambda", 1)
-        self.aps = kwargs.get("affinity_patch_size", 20)
         self.min_impr = kwargs.get("minimum improvement", 1e-3)
         self.patience = kwargs.get("patience", 10)
+        self.crop_factor = kwargs.get("crop_factor", 0.2)
 
         # encoders of X and Y
         self._enc_x = ImageTranslationNetwork(
@@ -149,7 +149,8 @@ class Kern_AceNet(ChangeDetector):
             )
             # zx_t_zy = ztz(image_in_patches(x_code, 20), image_in_patches(y_code, 20))
             zx_t_zy = ztz(
-                tf.image.central_crop(x_code, 0.2), tf.image.central_crop(y_code, 0.2)
+                tf.image.central_crop(x_code, self.crop_factor),
+                tf.image.central_crop(y_code, self.crop_factor),
             )
             retval = [x_hat, y_hat, x_dot, y_dot, x_tilde, y_tilde, zx_t_zy]
 
@@ -180,25 +181,11 @@ class Kern_AceNet(ChangeDetector):
             x_hat, y_hat, x_dot, y_dot, x_tilde, y_tilde, ztz = self(
                 [x, y], training=True
             )
-
             Kern = 1.0 - Degree_matrix(
-                tf.image.central_crop(x, 0.2), tf.image.central_crop(y, 0.2)
+                tf.image.central_crop(x, self.crop_factor),
+                tf.image.central_crop(y, self.crop_factor),
             )
             kernels_loss = self.kernels_lambda * self.loss_object(Kern, ztz)
-            l2_loss_k = sum(self._enc_x.losses) + sum(self._enc_y.losses)
-            targets_k = (
-                self._enc_x.trainable_variables + self._enc_y.trainable_variables
-            )
-            gradients_k = tape.gradient(kernels_loss + l2_loss_k, targets_k)
-            if self.clipnorm is not None:
-                gradients_k, _ = tf.clip_by_global_norm(gradients_k, self.clipnorm)
-
-            self._optimizer_k.apply_gradients(zip(gradients_k, targets_k))
-
-        with tf.GradientTape() as tape:
-            x_hat, y_hat, x_dot, y_dot, x_tilde, y_tilde, ztz = self(
-                [x, y], training=True
-            )
             l2_loss = (
                 sum(self._enc_x.losses)
                 + sum(self._enc_y.losses)
@@ -220,6 +207,7 @@ class Kern_AceNet(ChangeDetector):
                 + cross_y_loss
                 + recon_y_loss
                 + l2_loss
+                + kernels_loss
             )
 
             targets_all = (

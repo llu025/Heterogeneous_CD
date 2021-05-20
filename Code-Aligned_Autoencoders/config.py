@@ -31,6 +31,7 @@ def get_config(dataset_name, debug=False):
                 "affinity_stride": 5,  # stride for prior computation
             }
         )
+        CONFIG.update(crop_factor=24 / CONFIG["patch_size"])
     else:
         CONFIG.update(
             {
@@ -43,6 +44,7 @@ def get_config(dataset_name, debug=False):
                 "affinity_stride": 5,  # stride for prior computation
             }
         )
+        CONFIG.update(crop_factor=0.2)
     CONFIG.update(epochs=sum(CONFIG["list_epochs"]))
     if CONFIG["epochs"] > 20:  # Too many images on Tensorboard, massive logfiles
         freq = CONFIG["epochs"] // 10  # Ten (or nine) copies per image
@@ -57,7 +59,7 @@ def get_config_kACE(dataset_name, debug=False):
             "cycle_lambda": 1,  # weight for cyclic loss term
             "cross_lambda": 1,  # weight for cross loss term
             "recon_lambda": 1,  # weight for the reconstruction term
-            "kernels_lambda": 1,  # weight for the kernel term
+            "kernels_lambda": 0.1,  # weight for the kernel term
         }
     )
     return CONFIG

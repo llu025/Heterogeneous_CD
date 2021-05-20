@@ -163,7 +163,9 @@ def Degree_matrix(x, y):
     ax = affinity(x)
     ay = affinity(y)
     D = tf.norm(tf.expand_dims(ax, 1) - tf.expand_dims(ay, 2), 2, -1)
-    D = (D - tf.reduce_min(D)) / (tf.reduce_max(D) - tf.reduce_min(D))
+    min_D = tf.reduce_min(D, axis=[1, 2], keepdims=True)
+    max_D = tf.reduce_max(D, axis=[1, 2], keepdims=True)
+    D = (D - min_D) / (max_D - min_D)
     return D
 
 
@@ -180,10 +182,12 @@ def ztz(x, y):
         Output:
             ztz - float, array of [batch_size, patch_size^2, patch_size^2], Inner product
     """
-    max_norm = x.shape[-1]
+    
     flat_shape = [x.shape[0], x.shape[1] ** 2, -1]
     x = tf.reshape(x, flat_shape)
     y = tf.reshape(y, flat_shape)
+    norms = tf.norm(tf.concat([x, y], 1), axis=-1, keepdims=True)
+    max_norm = tf.math.reduce_max(norms, axis=1, keepdims=True)
     ztz = (tf.keras.backend.batch_dot(y, x, -1) + max_norm) / (2 * max_norm)
 
     return ztz
