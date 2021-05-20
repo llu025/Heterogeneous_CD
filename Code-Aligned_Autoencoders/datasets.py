@@ -86,13 +86,20 @@ def _italy(reduce=False):
 
     t1 = np.array(mat["t1"], dtype=np.single)
     t2 = np.array(mat["t2"], dtype=np.single)
+    change_mask = np.array(mat["ROI"], dtype=np.bool)
     if t1.shape[-1] == 3:
         t1 = t1[..., 0]
+    t1, t2, change_mask = (
+        remove_borders(t1, 2),
+        remove_borders(t2, 2),
+        remove_borders(change_mask, 2),
+    )
     t1, t2 = _clip(t1[..., np.newaxis]), _clip(t2)
-    change_mask = tf.convert_to_tensor(mat["ROI"], dtype=tf.bool)
+    change_mask = tf.convert_to_tensor(change_mask, dtype=tf.bool)
     assert t1.shape[:2] == t2.shape[:2] == change_mask.shape[:2]
     if change_mask.ndim == 2:
         change_mask = change_mask[..., np.newaxis]
+    change_mask = change_mask[..., :1]
     return t1, t2, change_mask
 
 
@@ -117,6 +124,11 @@ def _france(reduce=True):
             tf.image.resize(tf.cast(change_mask, tf.uint8), new_dims, antialias=True),
             tf.bool,
         )
+    t1, t2, change_mask = (
+        remove_borders(t1, 2),
+        remove_borders(t2, 2),
+        remove_borders(change_mask, 2),
+    )
 
     return t1, t2, change_mask
 
@@ -125,8 +137,8 @@ def _california(reduce=False):
     """ Load California dataset from .mat """
     mat = loadmat("data/California/UiT_HCD_California_2017.mat")
 
-    t1 = tf.convert_to_tensor(mat["t1_L8_clipped"], dtype=tf.float32)
-    t2 = tf.convert_to_tensor(mat["logt2_clipped"], dtype=tf.float32)
+    t1 = np.array(mat["t1_L8_clipped"], dtype=np.float32)
+    t2 = np.array(mat["logt2_clipped"], dtype=np.float32)
     change_mask = tf.convert_to_tensor(mat["ROI"], dtype=tf.bool)
     assert t1.shape[:2] == t2.shape[:2] == change_mask.shape[:2]
     if change_mask.ndim == 2:
@@ -141,6 +153,12 @@ def _california(reduce=False):
             tf.image.resize(tf.cast(change_mask, tf.uint8), new_dims, antialias=True),
             tf.bool,
         )
+
+    t1, t2, change_mask = (
+        remove_borders(t1, 2),
+        remove_borders(t2, 2),
+        remove_borders(change_mask, 2),
+    )
 
     return t1, t2, change_mask
 
@@ -158,6 +176,12 @@ def _texas(clip=True):
     assert t1.shape[:2] == t2.shape[:2] == change_mask.shape[:2]
     if change_mask.ndim == 2:
         change_mask = change_mask[..., np.newaxis]
+
+    t1, t2, change_mask = (
+        remove_borders(t1, 2),
+        remove_borders(t2, 2),
+        remove_borders(change_mask, 2),
+    )
 
     return t1, t2, change_mask
 
@@ -322,7 +346,7 @@ def fetch_CGAN(name, **kwargs):
     return dataset[0], dataset[1], evaluation_data, (chs[0], chs[1]), tot_patches
 
 
-def fetch(name, patch_size=100, **kwargs):
+def fetch(name, **kwargs):
     """
         Input:
             name - dataset name, should be in DATASETS
@@ -356,4 +380,4 @@ def fetch(name, patch_size=100, **kwargs):
 if __name__ == "__main__":
     for DATASET in DATASETS:
         print(f"Loading {DATASET}")
-        fetch_fixed_dataset(DATASET)
+        fetch(DATASET)

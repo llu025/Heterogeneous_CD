@@ -1,7 +1,13 @@
 # import tensorflow as tf
 
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Conv2D, Dropout, Activation, Dense
+from tensorflow.keras.layers import (
+    Conv2D,
+    MaxPooling2D,
+    Dropout,
+    UpSampling2D,
+    Dense,
+)
 from tensorflow.keras.activations import relu, sigmoid, tanh
 from tensorflow.keras.regularizers import l2
 import tensorflow as tf
@@ -53,26 +59,43 @@ class ImageTranslationNetwork(Model):
             # "bias_regularizer": l2(l2_lambda),
             "dtype": dtype,
         }
-        layer = Conv2D(
-            filter_spec[0],
-            input_shape=(None, None, input_chs),
-            name=f"{name}-{0:02d}",
-            **conv_specs,
-        )
-        self.layers_ = [layer]
-        for l, n_filters in enumerate(filter_spec[1:]):
-            layer = Conv2D(n_filters, name=f"{name}-{l+1:02d}", **conv_specs)
-            self.layers_.append(layer)
 
-    def call(self, inputs, training=False):
-        """ Implements the feed forward part of the network """
-        x = inputs
+        self.layers_ = []
+        for l, n_filters in enumerate(filter_spec):  # OK
+            if l == 0:
+                layer = Conv2D(
+                    n_filters,
+                    input_shape=(None, None, input_chs),
+                    name=f"{name}-{l:02d}",
+                    **conv_specs,
+                )
+            else:
+                layer = Conv2D(n_filters, name=f"{name}-{l:02d}", **conv_specs)
+            self.layers_.append(layer)
+            if "enc" in name:
+                if l < len(filter_spec) // 2:
+                    self.layers_.append(MaxPooling2D(name=f"{name}-MP_{l:02d}"))
+                else:
+                    if l < len(filter_spec) - 1:
+                        self.layers_.append(UpSampling2D(name=f"{name}-UP_{l:02d}"))
+
+    def call(self, x, training=False):
+        skips = []
         for layer in self.layers_[:-1]:
-            x = layer(x)
-            x = relu(x, alpha=self.leaky_alpha)
-            x = self.dropout(x, training)
+            if "MP" in layer.name:
+                skips.append(x)
+                x = layer(x)
+            elif "UP" in layer.name:
+                x = layer(x)
+                x = x + skips.pop()
+            else:
+                x = self.dropout(x, training)
+                x = layer(x)
+                x = relu(x, alpha=self.leaky_alpha)
+        x = self.dropout(x, training)
         x = self.layers_[-1](x)
-        return tanh(x)
+        x = tanh(x)
+        return x
 
 
 class Discriminator(Model):
