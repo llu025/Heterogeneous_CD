@@ -53,8 +53,11 @@ class ChangeDetector:
         self.difference_img_metrics = {"AUC": tf.keras.metrics.AUC()}
         self.change_map_metrics = {
             "ACC": tf.keras.metrics.Accuracy(),
-            "cohens kappa": CohenKappa(num_classes=2),
-            # 'F1': tfa.metrics.F1Score(num_classes=2, average=None)
+            "Kappa": CohenKappa(num_classes=2),
+            "TP": tf.keras.metrics.TruePositives(),
+            "TN": tf.keras.metrics.TrueNegatives(),
+            "FP": tf.keras.metrics.FalsePositives(),
+            "FN": tf.keras.metrics.FalseNegatives(),
         }
         assert not set(self.difference_img_metrics) & set(self.change_map_metrics)
         # If the metric dictionaries shares keys, the history will not work
@@ -250,7 +253,12 @@ class ChangeDetector:
         change_map = self._change_map(difference_img)
         self._compute_metrics(target_change_map, change_map, self.change_map_metrics)
 
-        tf.print("cohens kappa:", self.metrics_history["cohens kappa"][-1])
+        tf.print(
+            "Kappa:",
+            self.metrics_history["Kappa"][-1],
+            "Accuracy:",
+            self.metrics_history["ACC"][-1],
+        )
         confusion_map = self._confusion_map(target_change_map, change_map)
 
         return confusion_map

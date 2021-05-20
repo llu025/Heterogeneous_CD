@@ -231,7 +231,14 @@ def test(DATASET="Texas", CONFIG=None):
             TRAIN = TRAIN.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     cd.final_evaluate(EVALUATE, **CONFIG)
-    final_kappa = cd.metrics_history["cohens kappa"][-1]
+    metrics = {}
+    for key in list(cd.difference_img_metrics.keys()) + list(
+        cd.change_map_metrics.keys()
+    ):
+        metrics[key] = cd.metrics_history[key][-1]
+    metrics["F1"] = metrics["TP"] / (
+        metrics["TP"] + 0.5 * (metrics["FP"] + metrics["FN"])
+    )
     timestamp = cd.timestamp
     epoch = cd.epoch.numpy()
     return final_kappa, epoch, training_time, timestamp

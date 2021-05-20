@@ -299,15 +299,20 @@ def test(DATASET="Texas", CONFIG=None):
 
     cd.load_all_weights(cd.log_path)
     cd.final_evaluate(EVALUATE, **CONFIG)
-    final_kappa = cd.metrics_history["cohens kappa"][-1]
-    final_acc = cd.metrics_history["ACC"][-1]
-    performance = (final_kappa, final_acc)
+    metrics = {}
+    for key in list(cd.difference_img_metrics.keys()) + list(
+        cd.change_map_metrics.keys()
+    ):
+        metrics[key] = cd.metrics_history[key][-1]
+    metrics["F1"] = metrics["TP"] / (
+        metrics["TP"] + 0.5 * (metrics["FP"] + metrics["FN"])
+    )
     timestamp = cd.timestamp
     epoch = cd.epoch.numpy()
     speed = (epoch, training_time, timestamp)
     del cd
     gc.collect()
-    return performance, speed
+    return metrics, speed
 
 
 if __name__ == "__main__":
