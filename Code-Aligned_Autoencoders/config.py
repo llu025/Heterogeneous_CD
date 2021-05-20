@@ -9,7 +9,6 @@ def get_config(dataset_name, debug=False):
         "clipnorm": 1,  # threshold for gradient clipping
         "learning_rate": 1e-4,  # initial learning rate for ExponentialDecay
         "l2_lambda": 1e-6,  # l2 regularizer for the weights
-        "logdir": f"logs/{dataset_name}/" + datetime.now().strftime("%Y%m%d-%H%M%S"),
         "save_images": True,  # bool, wheter to store images after training
         "channel_x": [1, 2, 3],
         "channel_y": [3, 4, 7],
@@ -22,6 +21,8 @@ def get_config(dataset_name, debug=False):
     if tf.config.list_physical_devices("GPU") and not debug:
         CONFIG.update(
             {
+                "logdir": f"logs/{dataset_name}/"
+                + datetime.now().strftime("%Y%m%d-%H%M%S"),
                 "list_epochs": [50, 50, 50, 50],  # number of training epochs
                 "batches": 10,  # number of batches per epoch
                 "batch_size": 10,  # number of samples per batch
@@ -35,6 +36,8 @@ def get_config(dataset_name, debug=False):
     else:
         CONFIG.update(
             {
+                "logdir": f"logs/{dataset_name}/debug/"
+                + datetime.now().strftime("%Y%m%d-%H%M%S"),
                 "list_epochs": [2, 2, 1],  # number of training epochs
                 "batches": 2,  # number of batches per epoch
                 "batch_size": 2,  # number of samples per batch

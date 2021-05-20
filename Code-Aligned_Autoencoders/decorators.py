@@ -90,7 +90,7 @@ def image_to_tensorboard(static_name=None, pre_process=None):
                     tf.summary.experimental.get_step() % self.evaluation_frequency,
                     dtype=tf.bool,
                 )
-            ):
+            ) or self._save_images:
                 write_image_to_summary(tmp2, self.tb_writer, name, pre_process)
             if self._save_images and name is not None:
                 filename = self._image_dir + tf.constant(f"/{name}.png")

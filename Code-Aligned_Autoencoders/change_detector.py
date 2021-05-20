@@ -224,7 +224,6 @@ class ChangeDetector:
             if self.early_stopping_criterion():
                 break
 
-        self._write_metric_history()
         return self.epoch
 
     def evaluate(self, x, y, target_change_map, filter_=None):
@@ -276,11 +275,14 @@ class ChangeDetector:
                 final_filter - passed to evaluate. Can be None
                                Can be decorated with image_to_tensorboard
         """
+        self.epoch.assign_add(1)
+        tf.summary.experimental.set_step(self.epoch)
         self._save_images.assign(save_images)
         for eval_data in evaluation_dataset.batch(1):
             ev_res = self.evaluate(*eval_data, final_filter)
         self._save_images.assign(False)
         tf.summary.flush(self.tb_writer)
+        self._write_metric_history()
 
     def _compute_metrics(self, y_true, y_pred, metrics):
         """
