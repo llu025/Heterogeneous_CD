@@ -1,5 +1,5 @@
 ## Deep Image Translation
-This subfolder contains the Python code developed for the empirical experiments carried out and presented in the paper *Deep Image Translation with an Affinity-Based Change Prior for Unsupervised Multimodal Change Detection* which can be found at https://arxiv.org/abs/2001.04271.
+This subfolder contains the Python code developed for the empirical experiments carried out and presented in the paper *Deep Image Translation with an Affinity-Based Change Prior for Unsupervised Multimodal Change Detection* which can be found at https://doi.org/10.1109/TGRS.2021.3056196.
 
 Please refer to the paper for details. You are more than welcome to use the code, but acknowledge us by referencing to our paper and to this Github repository!
 
