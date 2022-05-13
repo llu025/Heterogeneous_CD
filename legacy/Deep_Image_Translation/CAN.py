@@ -30,7 +30,7 @@ LAMBDA = 5
 
 TRAIN = 1
 DATASET = args.dataset
-NAME_DATASET = ["Texas", "California", "Shuguang"]
+NAME_DATASET = ["Texas", "California", "Shuguang", "Italy", "France"]
 RUNS = args.runs
 RUN = args.run
 
@@ -450,6 +450,18 @@ def run_model():
         t1 = temp
         del temp
         folder = "Results/CAN/Shuguang/"
+    elif DATASET == 3:
+        mat = scipy.io.loadmat("data/Italy/Italy_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
+        folder = "Results/CAN/Italy/"
+    elif DATASET == 4:
+        mat = scipy.io.loadmat("data/France/France_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
+        folder = "Results/CAN/France/"
     else:
         print("Wrong data set")
         exit()

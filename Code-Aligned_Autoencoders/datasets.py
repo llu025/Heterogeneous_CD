@@ -100,11 +100,15 @@ def _italy(reduce=False):
     if change_mask.ndim == 2:
         change_mask = change_mask[..., np.newaxis]
     change_mask = change_mask[..., :1]
+    savemat(
+        "data/Italy/Italy_clipped.mat",
+        {"t1": t1.numpy(), "t2": t2.numpy(), "ROI": change_mask.numpy()},
+    )
     return t1, t2, change_mask
 
 
 def _france(reduce=True):
-    """ Load France dataset from .mat """
+    """Load France dataset from .mat"""
     mat = loadmat("data/France/France.mat")
 
     t1 = np.array(mat["t1"], dtype=np.single)
@@ -129,12 +133,15 @@ def _france(reduce=True):
         remove_borders(t2, 2),
         remove_borders(change_mask, 2),
     )
-
+    savemat(
+        "data/France/France_clipped.mat",
+        {"t1": t1.numpy(), "t2": t2.numpy(), "ROI": change_mask.numpy()},
+    )
     return t1, t2, change_mask
 
 
 def _california(reduce=False):
-    """ Load California dataset from .mat """
+    """Load California dataset from .mat"""
     mat = loadmat("data/California/UiT_HCD_California_2017.mat")
 
     t1 = np.array(mat["t1_L8_clipped"], dtype=np.float32)
@@ -159,14 +166,17 @@ def _california(reduce=False):
         remove_borders(t2, 2),
         remove_borders(change_mask, 2),
     )
-
+    savemat(
+        "data/California/California_clipped.mat",
+        {"t1": t1.numpy(), "t2": t2.numpy(), "ROI": change_mask.numpy()},
+    )
     return t1, t2, change_mask
 
 
 def _texas(clip=True):
-    """ Load Texas dataset from .mat """
+    """Load Texas dataset from .mat"""
     mat = loadmat("data/Texas/Cross-sensor-Bastrop-data.mat")
-
+    print("here")
     t1 = np.array(mat["t1_L5"], dtype=np.single)
     t2 = np.array(mat["t2_ALI"], dtype=np.single)
     if clip:
@@ -183,6 +193,10 @@ def _texas(clip=True):
         remove_borders(change_mask, 2),
     )
 
+    savemat(
+        "data/Texas/Texas_clipped.mat",
+        {"t1": t1.numpy(), "t2": t2.numpy(), "ROI": change_mask.numpy()},
+    )
     return t1, t2, change_mask
 
 

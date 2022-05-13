@@ -42,7 +42,7 @@ args = parser.parse_args()
 DATASET = args.dataset
 PRE_TRAIN = 0
 TRAIN = 1
-NAME_DATASET = ["Texas", "California", "Shuguang"]
+NAME_DATASET = ["Texas", "California", "Shuguang", "Italy", "France"]
 USE_PATCHES = 0  # DATASET
 
 LEARNING_RATE = 10e-5
@@ -74,6 +74,12 @@ elif DATASET == 0:
     nc2 = 10
 elif DATASET == 2:
     nc1 = 1
+    nc2 = 3
+elif DATASET == 3:
+    nc1 = 1
+    nc2 = 3
+elif DATASET == 4:
+    nc1 = 3
     nc2 = 3
 else:
     print("Wrong dataset")
@@ -731,6 +737,16 @@ def run_model():
         t1 = t1 * 2.0 - 1.0
         t1 = t1[:, :, np.newaxis]
         t2 = t2 * 2.0 - 1.0
+    elif DATASET == 3:
+        mat = scipy.io.loadmat("data/Italy/Italy_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
+    elif DATASET == 4:
+        mat = scipy.io.loadmat("data/France/France_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
     else:
         print("Wrong data set")
         exit()

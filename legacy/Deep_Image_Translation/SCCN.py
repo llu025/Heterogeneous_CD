@@ -30,7 +30,7 @@ LAMBDA = 0.2
 
 PRETRAIN = 1
 DATASET = args.dataset
-NAME_DATASET = ["Texas", "California", "Shuguang"]
+NAME_DATASET = ["Texas", "California", "Shuguang", "Italy", "France"]
 
 LEARNING_RATE = 10e-4
 MAX_GRAD_NORM = 1.0
@@ -509,6 +509,18 @@ def run_model(which_ch1=None, which_ch2=None):
         t1 = t1[:, :, np.newaxis]
         t2 = t2 * 2.0 - 1.0
         folder = "Results/SCCN/Shuguang/"
+    elif DATASET == 3:
+        mat = scipy.io.loadmat("data/Italy/Italy_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
+        folder = "Results/SCCN/Italy/"
+    elif DATASET == 4:
+        mat = scipy.io.loadmat("data/France/France_clipped.mat")
+        t1 = np.array(mat["t1"], dtype=float)
+        t2 = np.array(mat["t2"], dtype=float)
+        mask = np.squeeze(np.array(mat["ROI"], dtype=bool))
+        folder = "Results/SCCN/France/"
     else:
         print("Wrong data set")
         exit()
