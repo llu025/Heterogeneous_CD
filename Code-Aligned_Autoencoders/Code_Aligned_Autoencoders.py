@@ -17,21 +17,21 @@ import numpy as np
 class Kern_AceNet(ChangeDetector):
     def __init__(self, translation_spec, **kwargs):
         """
-                Input:
-                    translation_spec - dict with keys 'enc_X', 'enc_Y', 'dec_X', 'dec_Y'.
-                                       Values are passed as kwargs to the
-                                       respective ImageTranslationNetwork's
-                    cycle_lambda=2 - float, loss weight
-                    cross_lambda=1 - float, loss weight
-                    l2_lambda=1e-3 - float, loss weight
-                    kernels_lambda - float, loss weight
-                    learning_rate=1e-5 - float, initial learning rate for
-                                         ExponentialDecay
-                    clipnorm=None - gradient norm clip value, passed to
-                                    tf.clip_by_global_norm if not None
-                    logdir=None - path to log directory. If provided, tensorboard
-                                  logging of training and evaluation is set up at
-                                  'logdir/timestamp/' + 'train' and 'evaluation'
+        Input:
+            translation_spec - dict with keys 'enc_X', 'enc_Y', 'dec_X', 'dec_Y'.
+                               Values are passed as kwargs to the
+                               respective ImageTranslationNetwork's
+            cycle_lambda=2 - float, loss weight
+            cross_lambda=1 - float, loss weight
+            l2_lambda=1e-3 - float, loss weight
+            kernels_lambda - float, loss weight
+            learning_rate=1e-5 - float, initial learning rate for
+                                 ExponentialDecay
+            clipnorm=None - gradient norm clip value, passed to
+                            tf.clip_by_global_norm if not None
+            logdir=None - path to log directory. If provided, tensorboard
+                          logging of training and evaluation is set up at
+                          'logdir/timestamp/' + 'train' and 'evaluation'
         """
 
         super().__init__(**kwargs)
@@ -61,7 +61,7 @@ class Kern_AceNet(ChangeDetector):
             **translation_spec["dec_Y"], name="dec_Y", l2_lambda=self.l2_lambda
         )
 
-        self.loss_object = tf.keras.losses.MeanSquaredError()
+        self.loss_object = tf.keras.losses.MeanAbsoluteError()
 
         self.train_metrics["cycle_x"] = tf.keras.metrics.Sum(name="cycle_x MSE sum")
         self.train_metrics["cross_x"] = tf.keras.metrics.Sum(name="cross_x MSE sum")
@@ -90,7 +90,7 @@ class Kern_AceNet(ChangeDetector):
 
     @image_to_tensorboard()
     def enc_x(self, inputs, training=False):
-        """ Wraps encoder call for TensorBoard printing and image save """
+        """Wraps encoder call for TensorBoard printing and image save"""
         return self._enc_x(inputs, training)
 
     @image_to_tensorboard()
